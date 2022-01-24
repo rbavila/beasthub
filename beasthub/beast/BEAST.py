@@ -1,5 +1,0 @@
-class BEAST:
-    ESC = 0x1a
-    TYPE_MODE_AC = 0x31
-    TYPE_MODE_S_SHORT = 0x32
-    TYPE_MODE_S_LONG = 0x33

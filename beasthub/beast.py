@@ -1,4 +1,7 @@
-from BEAST import BEAST
+ESC = 0x1a
+TYPE_MODE_AC = 0x31
+TYPE_MODE_S_SHORT = 0x32
+TYPE_MODE_S_LONG = 0x33
 
 class BEASTParser:
     STATE_OUT_OF_SYNC = 0
@@ -18,26 +21,26 @@ class BEASTParser:
     def feed(self, bytes):
         for b in bytes:
             if self.state == self.STATE_OUT_OF_SYNC:
-                if b == BEAST.ESC:
-                    self.current_pdu = bytearray([BEAST.ESC])
+                if b == ESC:
+                    self.current_pdu = bytearray([ESC])
                     self.state = self.STATE_TYPE
             else:
                 self.current_pdu.append(b)
                 if self.state == self.STATE_TYPE:
-                    if b == BEAST.TYPE_MODE_AC \
-                            or b == BEAST.TYPE_MODE_S_SHORT \
-                            or b == BEAST.TYPE_MODE_S_LONG:
+                    if b == TYPE_MODE_AC \
+                            or b == TYPE_MODE_S_SHORT \
+                            or b == TYPE_MODE_S_LONG:
                         self.current_type = b
                         self.field_bytes_to_go = 6
                         self.state = self.STATE_TS
                     else:
                         self.state = self.STATE_OUT_OF_SYNC
-                elif not self.escaped and b == BEAST.ESC:
+                elif not self.escaped and b == ESC:
                     self.escaped = True
                 else:
                     if self.escaped:
                         self.escaped = False
-                        if b != BEAST.ESC:
+                        if b != ESC:
                             self.state = self.STATE_OUT_OF_SYNC
                             continue
                     if self.state == self.STATE_TS:
@@ -45,9 +48,9 @@ class BEASTParser:
                         if self.field_bytes_to_go == 0:
                             self.state = self.STATE_RSSI
                     elif self.state == self.STATE_RSSI:
-                        if self.current_type == BEAST.TYPE_MODE_AC:
+                        if self.current_type == TYPE_MODE_AC:
                             self.field_bytes_to_go = 2
-                        elif self.current_type == BEAST.TYPE_MODE_S_SHORT:
+                        elif self.current_type == TYPE_MODE_S_SHORT:
                             self.field_bytes_to_go = 7
                         else:
                             self.field_bytes_to_go = 14

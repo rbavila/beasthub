@@ -1,5 +1,5 @@
 import queue
-from Worker import Worker
+from beasthub.worker import Worker
 
 class Dispatcher(Worker):
     def __init__(self, name, logger, msgqueue, output_workers):

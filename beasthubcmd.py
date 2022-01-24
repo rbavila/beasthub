@@ -4,30 +4,14 @@ import signal
 import sys
 import argparse
 import textwrap
-from queue import SimpleQueue
-from Logger import Logger
-from SyslogLogger import SyslogLogger
-from PrefixLogger import PrefixLogger
-from TCPListenerInputManager import TCPListenerInputManager
-from TCPListenerOutputManager import TCPListenerOutputManager
-from TCPConnectorInput import TCPConnectorInput
-from TCPConnectorOutput import TCPConnectorOutput
-from UDPInput import UDPInput
-from UDPOutput import UDPOutput
-from Dispatcher import Dispatcher
-
+import beasthub
+import beasthub.logger
 
 #
 # handle interruptions (ex.: Ctrl-C)
 #
 def sig_handler(sig, frame):
-    main_logger.log("Received interrupt signal, waiting for threads to shut down")
-    # tell all threads to shutdown
-    for t in input_workers:
-        t.shutdown()
-    for t in output_workers:
-        t.shutdown()
-    dispatcher.shutdown()
+    bh.shutdown()
 
 #
 # main
@@ -128,102 +112,17 @@ if len(inputs) == 0 or len(outputs) == 0:
 # create the logger
 #
 if args.quiet:
-    loglevel = Logger.LOG_QUIET
+    loglevel = beasthub.logger.LOG_QUIET
 elif args.verbose:
-    loglevel = Logger.LOG_DEBUG
+    loglevel = beasthub.logger.LOG_DEBUG
 else:
-    loglevel = Logger.LOG_INFO
+    loglevel = beasthub.logger.LOG_INFO
 
 if args.syslog:
-    logger = SyslogLogger(loglevel, "beasthub")
+    logger = beasthub.logger.SyslogLogger(loglevel, "beasthub")
 else:
-    logger = Logger(loglevel)
-main_logger = PrefixLogger(logger, "main")
-main_logger.log("Starting")
+    logger = beasthub.logger.Logger(loglevel)
 
-#
-# create the main message queue
-#
-msgqueue = SimpleQueue()
-
-#
-# create input workers
-#
-input_workers = []
-for [proto, *remainder] in inputs:
-    if proto == "tcp":
-        [tcptype, *host, port] = remainder
-        if tcptype == "listen":
-            if len(host) == 0:
-                host = ["0.0.0.0"]
-                name = "in tcp:listen:{}".format(port)
-            else:
-                name = "in tcp:listen:{}:{}".format(host[0], port)
-            t_logger = PrefixLogger(logger, name)
-            t = TCPListenerInputManager(name, t_logger, host[0], int(port), msgqueue)
-        else:
-            name = "in tcp:connect:{}:{}".format(host[0], port)
-            t_logger = PrefixLogger(logger, name)
-            t = TCPConnectorInput(name, t_logger, host[0], int(port), msgqueue)
-    else:
-        [*host, port] = remainder
-        if len(host) == 0:
-            host = ["0.0.0.0"]
-            name = "in udp:{}".format(port)
-        else:
-            name = "in udp:{}:{}".format(host[0], port)
-        t_logger = PrefixLogger(logger, name)
-        t = UDPInput(name, t_logger, host[0], int(port), msgqueue)
-    input_workers.append(t)
-
-#
-# create output workers
-#
-output_workers = []
-for [proto, *remainder] in outputs:
-    if proto == "tcp":
-        [tcptype, *host, port] = remainder
-        if tcptype == "listen":
-            if len(host) == 0:
-                host = ["0.0.0.0"]
-                name = "out tcp:listen:{}".format(port)
-            else:
-                name = "out tcp:listen:{}:{}".format(host[0], port)
-            t_logger = PrefixLogger(logger, name)
-            t = TCPListenerOutputManager(name, t_logger, host[0], int(port), msgqueue)
-        else:
-            name = "out tcp:connect:{}:{}".format(host[0], port)
-            t_logger = PrefixLogger(logger, name)
-            t = TCPConnectorOutput(name, t_logger, host[0], int(port))
-    else:
-        [host, port] = remainder
-        name = "out udp:{}:{}".format(host, port)
-        t_logger = PrefixLogger(logger, name)
-        t = UDPOutput(name, t_logger, host, int(port))
-    output_workers.append(t)
-
-#
-# create the dispatcher thread
-#
-name = "dispatcher"
-d_logger = PrefixLogger(logger, name)
-dispatcher = Dispatcher(name, d_logger, msgqueue, output_workers)
-
-#
-# start everybody
-#
-dispatcher.start()
-for t in input_workers:
-    t.start()
-for t in output_workers:
-    t.start()
-
-#
-# wait for all threads to shutdown
-#
-for t in input_workers:
-    t.join()
-for t in output_workers:
-    t.join()
-dispatcher.join()
-main_logger.log("Done")
+bh = beasthub.BEASTHub("main", logger, inputs, outputs)
+bh.start()
+bh.join()

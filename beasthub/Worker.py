@@ -16,10 +16,16 @@ class Worker(Thread):
         self._post_work()
 
     def _pre_work(self):
-        self.logger.log("Starting")
+        self.log("Starting")
 
     def _work(self):
         pass
 
     def _post_work(self):
-        self.logger.log("Done")
+        self.log("Done")
+
+    def log(self, msg):
+        self.logger.log("[{}] {}".format(self.name, msg))
+
+    def debug(self, msg):
+        self.logger.debug("[{}] {}".format(self.name, msg))
