@@ -18,7 +18,7 @@ form `<'in'|'out'>:<proto>:[<tcptype>:][<host>:]<port>`, where:
     Read BEAST messages via TCP from host 10.0.0.1 and send them
     via UDP to host 10.0.0.2
 
-`$ beasthub in:udp:31005 out:udp:10.0.0.2:12345 out:tcp:connect:10.0.0.3:5555`
+`$ beasthub in:udp:31005 out:udp:10.0.0.2:12345 out:tcp:connect:10.0.0.3:5555`  
     Receive messages via UDP and send them to both hosts 10.0.0.2 (via UDP)
     and 10.0.0.3 (via TCP)
 
