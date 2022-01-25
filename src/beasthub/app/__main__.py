@@ -85,7 +85,7 @@ def main():
             ''')
     )
     parser.add_argument("input", nargs="+", metavar="INPUT",
-        help="An input or output in the form 'in:<proto>:[<tcptype>:][<host>:]<port>'")
+        help="An input in the form 'in:<proto>:[<tcptype>:][<host>:]<port>'")
     parser.add_argument("output", nargs="+", metavar="OUTPUT",
         help="An output in the form 'out:<proto>:[<tcptype>:][<host>:]<port>'")
     #    help=argparse.SUPPRESS)
