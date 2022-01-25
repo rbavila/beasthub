@@ -1,8 +1,10 @@
 import threading
 import queue
-import beasthub.logger
-import beasthub.net
 
+from beasthub.tcplistener \
+    import TCPListenerInputManager, TCPListenerOutputManager
+from beasthub.tcpconnector import TCPConnectorInput, TCPConnectorOutput
+from beasthub.udp import UDPInput, UDPOutput
 from beasthub.dispatcher import Dispatcher
 
 class BEASTHub(threading.Thread):
@@ -25,12 +27,12 @@ class BEASTHub(threading.Thread):
                 [tcptype, *hostparam] = middleparams
                 host = hostparam[0] if len(hostparam) > 0 else "0.0.0.0"
                 if tcptype == "listen":
-                    t = beasthub.net.TCPListenerInputManager(name, self.logger, host, port, self.msgqueue)
+                    t = TCPListenerInputManager(name, self.logger, host, port, self.msgqueue)
                 else:
-                    t = beasthub.net.TCPConnectorInput(name, self.logger, host, port, self.msgqueue)
+                    t = TCPConnectorInput(name, self.logger, host, port, self.msgqueue)
             else:
                 host = middleparams[0] if len(middleparams) > 0 else "0.0.0.0"
-                t = beasthub.net.UDPInput(name, self.logger, host, port, self.msgqueue)
+                t = UDPInput(name, self.logger, host, port, self.msgqueue)
             self.input_workers.append(t)
 
         # create output workers
@@ -42,12 +44,12 @@ class BEASTHub(threading.Thread):
                 [tcptype, *hostparam] = middleparams
                 host = hostparam[0] if len(hostparam) > 0 else "0.0.0.0"
                 if tcptype == "listen":
-                    t = beasthub.net.TCPListenerOutputManager(name, self.logger, host, port, self.msgqueue)
+                    t = TCPListenerOutputManager(name, self.logger, host, port, self.msgqueue)
                 else:
-                    t = beasthub.net.TCPConnectorOutput(name, self.logger, host, port)
+                    t = TCPConnectorOutput(name, self.logger, host, port)
             else:
                 host = middleparams[0] if len(middleparams) > 0 else "0.0.0.0"
-                t = beasthub.net.UDPOutput(name, self.logger, host, port)
+                t = UDPOutput(name, self.logger, host, port)
             self.output_workers.append(t)
 
         # create the dispatcher thread
